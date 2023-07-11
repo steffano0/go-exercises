@@ -2,12 +2,14 @@ package goxes
 
 import (
 	"errors"
+	
 )
 
 
 type Authentication interface {
 	GetUser(username string) (*User, error)
 	CreateUser(username string, password string)
+	Login(User)
 
 }
 
@@ -37,4 +39,19 @@ func (database *UserDatabase) CreateUser(user *User) error {
 	
 	database.users[user.Username] = user 
 	return nil
+}
+
+func (database *UserDatabase) Login(userEval *User) error {
+
+
+	for _, user := range database.users {
+
+
+		if user.Username == userEval.Username && user.Password == userEval.Password {
+			
+			return nil
+		}
+		
+	}
+	return errors.New("user not authorized")
 }
