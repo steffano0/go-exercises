@@ -1,10 +1,16 @@
 package sasl
 
-import . "gopkg.in/check.v1"
+import (
+	"testing"
+
+	. "gopkg.in/check.v1"
+)
 
 type ParserSuite struct{}
 
 var _ = Suite(&ParserSuite{})
+
+func Test(t *testing.T) { TestingT(t) }
 
 func (s *ParserSuite) Test_parseClientFirstMessage_returnsACorrectlyParsedMessage(c *C) {
 	msg := "n,,n=so=2Cmeo=3Dne,r=blablabla"

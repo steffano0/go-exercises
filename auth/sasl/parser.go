@@ -2,7 +2,6 @@ package sasl
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 )
 
@@ -22,13 +21,19 @@ func parseClientFirstMessage(msg string) (*firstMessage, error) {
 
 	pieces := strings.Split(msg, ",")
 
+	if len(pieces[2]) <= 2 {
+		return nil, errors.New("no value given for username")
+
+	} else if strings.Contains(pieces[2][2:], "=") {
+		if !strings.Contains(pieces[2][2:], "=2C") && !strings.Contains(pieces[2][2:], "=3D") {
+			return nil, errors.New("invalid character '=' in username")
+		}
+	} else if pieces[2][:1] != "n" {
+		return nil, errors.New("incorrect tag 'q' for username")
+	}
+
 	fm.channelBinding = parseChannelBinding(pieces[0])
 	fm.authAs = parseAuthAs(pieces[1])
-	if pieces[2][:1] != "n" {
-		return nil, errors.New("incorrect tag 'q' for username")
-	} else if len(pieces[2]) <= 2 {
-		return nil, errors.New("no value given for username")
-	}
 	fm.username = parseUsername(pieces[2])
 	fm.nonce = parseNonce(pieces[3])
 
@@ -44,8 +49,6 @@ func parseAuthAs(msg string) *string {
 }
 
 func parseUsername(msg string) string {
-	fmt.Printf("asked to parse: '%v'\n", msg)
-
 	username := strings.ReplaceAll(
 		strings.ReplaceAll(msg[2:], "=2C", ","),
 		"=3D", "=")
