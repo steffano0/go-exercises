@@ -48,7 +48,7 @@ func (s *ParserSuite) Test_parseClientFirstMessage_generatesAnErrorWhenNoValueIs
 }
 
 func (s *ParserSuite) Test_parseClientFirstMessage_generatesAnErrorWhenInvalidCaracterFoundInUsername(c *C) {
-	msg := "n,,q=b=a,r=blablabla"
+	msg := "n,,q=b=a=2C,r=blablabla"
 
 	_, e := parseClientFirstMessage(msg)
 
