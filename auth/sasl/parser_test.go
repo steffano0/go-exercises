@@ -1,6 +1,10 @@
 package sasl
 
-import . "gopkg.in/check.v1"
+import (
+	"encoding/base64"
+
+	. "gopkg.in/check.v1"
+)
 
 type ParserSuite struct{}
 
@@ -212,18 +216,47 @@ func (s *ParserSuite) Test_parseClientFirstMessage_generatesAnError_whenIncorrec
 	c.Assert(e, ErrorMatches, "incorrect tag or value for nonce")
 }
 
+// base64Dec decodes the base64 string given, ignoring errors
+func base64Dec(s string) []byte {
+	result, _ := base64.StdEncoding.DecodeString(s)
+	return result
+}
+
 func (s *ParserSuite) Test_parseClientSecondMessage_returnsACorrectlyParsedMessage(c *C) {
 	msg := "c=biws,r=rOprNGfwEbeRWgbN,p=dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ="
 
 	result, e := parseClientSecondMessage(msg)
 
 	c.Assert(e, IsNil)
-	c.Assert(result.channelBindingType, Equals, "")
-	c.Assert(result.authAs, IsNil)
+	c.Assert(result.headerAndChannelBindingData, Equals, "biws")
 	c.Assert(result.nonce, Equals, "rOprNGfwEbeRWgbN")
-	c.Assert(result.clientProof, Equals, "dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ=")
+	c.Assert(result.clientProof, DeepEquals, base64Dec("dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ="))
 }
 
-// func (s *ParserSuite) Test_parseClientSecondMessage_generatesAnError_whenNoChannelBindingFlagIsGiven(c *C) {
+func (s *ParserSuite) Test_parseClientSecondMessage_generatesAnError_whenIncorrectChannelBindingDataTagOrValueIsGiven(c *C) {
+	msg := "q=biws,r=rOprNGfwEbeRWgbN,p=dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ="
 
-// }
+	result, e := parseClientSecondMessage(msg)
+
+	c.Assert(result, IsNil)
+	c.Assert(e, ErrorMatches, "incorrect tag or value for channel binding data")
+
+}
+
+func (s *ParserSuite) Test_parseClientSecondMessage_generatesAnError_whenIncorrectNonceTagOrValueIsGiven(c *C) {
+	msg := "c=biws,b=rOprNGfwEbeRWgbN,p=dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ="
+
+	result, e := parseClientSecondMessage(msg)
+
+	c.Assert(result, IsNil)
+	c.Assert(e, ErrorMatches, "incorrect tag or value for nonce")
+}
+
+func (s *ParserSuite) Test_parseClientSecondMessage_generatesAnError_whenIncorrectClientProofTagOrValueIsGiven(c *C) {
+	msg := "c=biws,r=rOprNGfwEbeRWgbN,s=dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ="
+
+	result, e := parseClientSecondMessage(msg)
+
+	c.Assert(result, IsNil)
+	c.Assert(e, ErrorMatches, "incorrect tag or value for client proof")
+}

@@ -1,7 +1,9 @@
 package sasl
 
 import (
+	"encoding/base64"
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -17,13 +19,14 @@ type firstMessage struct {
 	username           string
 	authAs             *string
 	nonce              string
+	messageBare        string
 }
 
 type secondMessage struct {
-	nonce              string
-	channelBindingType string
-	clientProof        string
-	authAs             *string
+	headerAndChannelBindingData string
+	nonce                       string
+	clientProof                 []byte
+	messageWithoutProof         string
 }
 
 func parseClientFirstMessage(msg string) (*firstMessage, error) {
@@ -37,29 +40,22 @@ func parseClientFirstMessage(msg string) (*firstMessage, error) {
 		return nil, err
 	}
 
-	if len(pieces) < 2 {
-		return nil, errors.New("no value given for authas")
-	}
-	fm.authAs, err = parseAuthAs(pieces[1])
+	fm.authAs, err = parseOptionalAttribute(pieces, 1, "authas", "a")
 	if err != nil {
 		return nil, err
 	}
 
-	if len(pieces) < 3 {
-		return nil, errors.New("no value given for username")
-	}
-	fm.username, err = parseUsername(pieces[2])
+	fm.username, err = parseDecodedAttribute(pieces, 2, "username", "n")
 	if err != nil {
 		return nil, err
 	}
 
-	if len(pieces) < 4 {
-		return nil, errors.New("no value given for nonce")
-	}
-	fm.nonce, err = parseNonce(pieces[3])
+	fm.nonce, err = parseSimpleAttribute(pieces, 3, "nonce", "r")
 	if err != nil {
 		return nil, err
 	}
+
+	fm.messageBare = strings.Join(pieces[2:], ",")
 
 	return fm, nil
 }
@@ -81,12 +77,21 @@ func parseChannelBinding(msg string) (channelBindingType, string, error) {
 	return "", "", errors.New("invalid value for channel binding")
 }
 
-func parseAuthAs(msg string) (*string, error) {
+func parseOptionalAttribute(pieces []string, index int, name string, tag string) (*string, error) {
+	if len(pieces) < index+1 {
+		return nil, fmt.Errorf("no value given for %s", name)
+	}
+
+	msg := pieces[index]
+
 	if len(msg) == 0 {
 		return nil, nil
 	}
-	if strings.HasPrefix(msg, "a=") {
-		val := strings.TrimPrefix(msg, "a=")
+
+	prefix := fmt.Sprintf("%s=", tag)
+
+	if strings.HasPrefix(msg, prefix) {
+		val := strings.TrimPrefix(msg, prefix)
 		if val == "" {
 			return nil, nil
 
@@ -94,7 +99,7 @@ func parseAuthAs(msg string) (*string, error) {
 		return &val, nil
 	}
 
-	return nil, errors.New("incorrect tag or value for authas")
+	return nil, fmt.Errorf("incorrect tag or value for %s", name)
 }
 
 func hasFloatingEqualSigns(msg string) bool {
@@ -103,21 +108,7 @@ func hasFloatingEqualSigns(msg string) bool {
 	return strings.Contains(strWithoutReplacements, "=")
 }
 
-func expectTag(msg, name string) (string, bool) {
-	pieces := strings.SplitN(msg, "=", 2)
-
-	if len(pieces) < 2 {
-		return "", false
-	}
-
-	if pieces[0] != name {
-		return "", false
-	}
-
-	return pieces[1], true
-}
-
-func urlDecode(msg string) (string, bool) {
+func decode(msg string) (string, bool) {
 	if hasFloatingEqualSigns(msg) {
 		return "", false
 	}
@@ -127,33 +118,74 @@ func urlDecode(msg string) (string, bool) {
 		"=3D", "="), true
 }
 
-func parseUsername(msg string) (string, error) {
-	rest, hasCorrectTag := expectTag(msg, "n")
-	if !hasCorrectTag {
-		return "", errors.New("incorrect tag or value for username")
+func parseBase64Attribute(pieces []string, index int, name string, tag string) ([]byte, error) {
+	res, err := parseSimpleAttribute(pieces, index, name, tag)
+	if err != nil {
+		return nil, err
 	}
 
-	username, correctEncoding := urlDecode(rest)
-	if !correctEncoding {
-		return "", errors.New("invalid character '=' in username")
-	}
-
-	return username, nil
+	return base64.StdEncoding.DecodeString(res)
 }
 
-func parseNonce(msg string) (string, error) {
-	if strings.HasPrefix(msg, "r=") {
-		val := strings.TrimPrefix(msg, "r=")
+func parseDecodedAttribute(pieces []string, index int, name string, tag string) (string, error) {
+	res, err := parseSimpleAttribute(pieces, index, name, tag)
+	if err != nil {
+		return "", err
+	}
+
+	res2, ok := decode(res)
+	if !ok {
+		return "", fmt.Errorf("invalid character '=' in %s", name)
+	}
+
+	return res2, nil
+}
+
+func parseSimpleAttribute(pieces []string, index int, name string, tag string) (string, error) {
+	if len(pieces) < index+1 {
+		return "", fmt.Errorf("no value given for %s", name)
+	}
+
+	msg := pieces[index]
+
+	prefix := fmt.Sprintf("%s=", tag)
+
+	incorrectError := fmt.Errorf("incorrect tag or value for %s", name)
+
+	if strings.HasPrefix(msg, prefix) {
+		val := strings.TrimPrefix(msg, prefix)
 		if val == "" {
-			return "", errors.New("incorrect tag or value for nonce")
+			return "", incorrectError
 		}
 		return val, nil
 	}
-	return "", errors.New("incorrect tag or value for nonce")
+	return "", incorrectError
+
 }
 
 func parseClientSecondMessage(msg string) (*secondMessage, error) {
 	sm := &secondMessage{}
+
+	var err error
+	pieces := strings.Split(msg, ",")
+
+	sm.headerAndChannelBindingData, err = parseSimpleAttribute(pieces, 0, "channel binding data", "c")
+	if err != nil {
+		return nil, err
+	}
+
+	sm.nonce, err = parseSimpleAttribute(pieces, 1, "nonce", "r")
+	if err != nil {
+		return nil, err
+	}
+
+	sm.clientProof, err = parseBase64Attribute(pieces, 2, "client proof", "p")
+	if err != nil {
+		return nil, err
+	}
+
+	sm.messageWithoutProof = strings.Join(pieces[:2], ",")
+
 	return sm, nil
 
 }
