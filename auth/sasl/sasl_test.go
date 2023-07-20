@@ -20,7 +20,7 @@ func (s *SaslSuite) Test_NewAuthentication_worksWithBasicExample(c *C) {
 	}
 
 	failureCalled := false
-	failure := func() {
+	failure := func(ServerError) {
 		failureCalled = true
 	}
 
@@ -49,8 +49,10 @@ func (s *SaslSuite) Test_NewAuthentication_failsOnIncorrectPassword(c *C) {
 	}
 
 	failureCalled := false
-	failure := func() {
+	var failureCalledWith ServerError
+	failure := func(e ServerError) {
 		failureCalled = true
+		failureCalledWith = e
 	}
 
 	challenge := func(v []byte) {
@@ -61,4 +63,86 @@ func (s *SaslSuite) Test_NewAuthentication_failsOnIncorrectPassword(c *C) {
 
 	c.Assert(successCalled, Equals, false)
 	c.Assert(failureCalled, Equals, true)
+	c.Assert(failureCalledWith, Equals, InvalidProof)
+}
+
+func (s *SaslSuite) Test_NewAuthentication_failsOnUnknownUser(c *C) {
+	userdb := auth.NewDatabase()
+	userdb.AddUser(auth.NewUser("user", "pen"))
+
+	successCalled := false
+
+	success := func() {
+		successCalled = true
+	}
+
+	failureCalled := false
+	var failureCalledWith ServerError
+	failure := func(e ServerError) {
+		failureCalled = true
+		failureCalledWith = e
+	}
+
+	challenge := func(v []byte) {
+	}
+
+	NewAuthentication("SCRAM-SHA-256", userdb, []byte("n,,n=unknownuser,r=rOprNGfwEbeRWgbNEkqO"), success, failure, challenge, newFixedRandomTestCase1())
+
+	c.Assert(successCalled, Equals, false)
+	c.Assert(failureCalled, Equals, true)
+	c.Assert(failureCalledWith, Equals, UnknownUser)
+}
+
+func (s *SaslSuite) Test_NewAuthentication_failsOnBadUsernameEncoding(c *C) {
+	userdb := auth.NewDatabase()
+	userdb.AddUser(auth.NewUser("us=er", "pen"))
+
+	successCalled := false
+
+	success := func() {
+		successCalled = true
+	}
+
+	failureCalled := false
+	var failureCalledWith ServerError
+	failure := func(e ServerError) {
+		failureCalled = true
+		failureCalledWith = e
+	}
+
+	challenge := func(v []byte) {
+	}
+
+	NewAuthentication("SCRAM-SHA-256", userdb, []byte("n,,n=us=er,r=rOprNGfwEbeRWgbNEkqO"), success, failure, challenge, newFixedRandomTestCase1())
+
+	c.Assert(successCalled, Equals, false)
+	c.Assert(failureCalled, Equals, true)
+	c.Assert(failureCalledWith, Equals, InvalidUsernameEncoding)
+}
+
+func (s *SaslSuite) Test_NewAuthentication_failsOnABadMessage(c *C) {
+	userdb := auth.NewDatabase()
+	userdb.AddUser(auth.NewUser("user", "pen"))
+
+	successCalled := false
+
+	success := func() {
+		successCalled = true
+	}
+
+	failureCalled := false
+	var failureCalledWith ServerError
+	failure := func(e ServerError) {
+		failureCalled = true
+		failureCalledWith = e
+	}
+
+	challenge := func(v []byte) {
+	}
+
+	NewAuthentication("SCRAM-SHA-256", userdb, []byte("n,,n=user,r="), success, failure, challenge, newFixedRandomTestCase1())
+
+	c.Assert(successCalled, Equals, false)
+	c.Assert(failureCalled, Equals, true)
+	c.Assert(failureCalledWith, Equals, InvalidEncoding)
 }

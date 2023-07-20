@@ -13,24 +13,24 @@ type serverFirstMessage struct {
 	iterationCount uint
 }
 
-type serverFinalMessage interface {
-	unparse() string
+type ServerFinalMessage interface {
+	Unparse() string
 }
 
-type serverError string
+type ServerError string
 
 const (
-	invalidEncoding                 = serverError("invalid-encoding")
-	extensionsNotSupported          = serverError("extensions-not-supported")
-	invalidProof                    = serverError("invalid-proof")
-	channelBindingsDontMatch        = serverError("channel-bindings-dont-match")
-	serverDoesSupportChannelBinding = serverError("server-does-support-channel-binding")
-	channelBindingNotSupported      = serverError("channel-binding-not-supported")
-	unsupportedChannelBindingType   = serverError("unsupported-channel-binding-type")
-	unknownUser                     = serverError("unknown-user")
-	invalidUsernameEncoding         = serverError("invalid-username-encoding")
-	noResources                     = serverError("no-resources")
-	otherError                      = serverError("other-error")
+	InvalidEncoding                 = ServerError("invalid-encoding")
+	ExtensionsNotSupported          = ServerError("extensions-not-supported")
+	InvalidProof                    = ServerError("invalid-proof")
+	ChannelBindingsDontMatch        = ServerError("channel-bindings-dont-match")
+	ServerDoesSupportChannelBinding = ServerError("server-does-support-channel-binding")
+	ChannelBindingNotSupported      = ServerError("channel-binding-not-supported")
+	UnsupportedChannelBindingType   = ServerError("unsupported-channel-binding-type")
+	UnknownUser                     = ServerError("unknown-user")
+	InvalidUsernameEncoding         = ServerError("invalid-username-encoding")
+	NoResources                     = ServerError("no-resources")
+	OtherError                      = ServerError("other-error")
 )
 
 type serverFinalMessageVerifier struct {
@@ -49,7 +49,7 @@ func attrs(values ...string) string {
 	return strings.Join(values, ",")
 }
 
-func (e serverError) unparse() string {
+func (e ServerError) Unparse() string {
 	return attr("e", string(e))
 }
 
@@ -61,6 +61,6 @@ func (m *serverFirstMessage) unparse() string {
 	)
 }
 
-func (m *serverFinalMessageVerifier) unparse() string {
+func (m *serverFinalMessageVerifier) Unparse() string {
 	return attrBase64("v", m.verifier)
 }

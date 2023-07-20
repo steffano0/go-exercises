@@ -1,28 +1,20 @@
 package methodsandinterfaces
 
-import "testing"
+import "math"
 
 type Rectangle struct {
 	Width  float64
 	Height float64
 }
 
-func TestPerimeter(t *testing.T) {
-	rectangle := Rectangle{10.0, 10.0}
-	got := Perimeter(rectangle)
-	want := 40.0
-
-	if got != want {
-		t.Errorf("got %.2f want %.2f", got, want)
-	}
+func (r Rectangle) Area() float64 {
+	return r.Width * r.Height
 }
 
-func TestArea(t *testing.T) {
-	rectangle := Rectangle{12.0, 6.0}
-	got := Area(rectangle)
-	want := 72.0
+type Circle struct {
+	Radius float64
+}
 
-	if got != want {
-		t.Errorf("got %.2f want %.2f", got, want)
-	}
+func (c Circle) Area() float64 {
+	return math.Pi * c.Radius * c.Radius
 }

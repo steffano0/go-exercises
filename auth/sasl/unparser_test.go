@@ -24,8 +24,8 @@ func (s *UnparserSuite) Test_serverFirstMessage_unparse_returnsCorrectlyUnparsed
 }
 
 func (s *UnparserSuite) Test_serverError_unparse_returnsCorrectlyUnparsedMessage(c *C) {
-	c.Assert(channelBindingNotSupported.unparse(), Equals, "e=channel-binding-not-supported")
-	c.Assert(invalidEncoding.unparse(), Equals, "e=invalid-encoding")
+	c.Assert(ChannelBindingNotSupported.Unparse(), Equals, "e=channel-binding-not-supported")
+	c.Assert(InvalidEncoding.Unparse(), Equals, "e=invalid-encoding")
 }
 
 func (s *UnparserSuite) Test_serverFinalMessageVerifier_unparse_returnsCorrectlyUnparsedMessage(c *C) {
@@ -36,7 +36,7 @@ func (s *UnparserSuite) Test_serverFinalMessageVerifier_unparse_returnsCorrectly
 		},
 	}
 
-	result := msg.unparse()
+	result := msg.Unparse()
 
 	c.Assert(result, Equals, "v=Af8ECA8RExghMiQIPxEjGA==")
 }

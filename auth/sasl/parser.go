@@ -127,6 +127,15 @@ func parseBase64Attribute(pieces []string, index int, name string, tag string) (
 	return base64.StdEncoding.DecodeString(res)
 }
 
+type decodeError struct {
+	name      string
+	character rune
+}
+
+func (e *decodeError) Error() string {
+	return fmt.Sprintf("invalid character '%c' in %s", e.character, e.name)
+}
+
 func parseDecodedAttribute(pieces []string, index int, name string, tag string) (string, error) {
 	res, err := parseSimpleAttribute(pieces, index, name, tag)
 	if err != nil {
@@ -135,7 +144,7 @@ func parseDecodedAttribute(pieces []string, index int, name string, tag string) 
 
 	res2, ok := decode(res)
 	if !ok {
-		return "", fmt.Errorf("invalid character '=' in %s", name)
+		return "", &decodeError{character: '=', name: name}
 	}
 
 	return res2, nil

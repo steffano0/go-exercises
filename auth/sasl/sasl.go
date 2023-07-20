@@ -15,14 +15,29 @@ type scramAuthentication struct {
 	scram     *scram
 	challenge func([]byte)
 	success   func()
-	failure   func()
+	failure   func(ServerError)
 }
 
 func (a *scramAuthentication) start(initialData []byte, userDb auth.Database) {
+	msg, err := parseClientFirstMessage(string(initialData))
 
-	msg, _ := parseClientFirstMessage(string(initialData))
+	if err != nil {
+		switch err.(type) {
+		case *decodeError:
+			a.failure(InvalidUsernameEncoding)
+		default:
+			a.failure(InvalidEncoding)
+		}
 
-	user, _ := userDb.GetUser(msg.username)
+		return
+	}
+
+	user, err := userDb.GetUser(msg.username)
+
+	if err != nil {
+		a.failure(UnknownUser)
+		return
+	}
 
 	a.data.h["password"] = user.GetPassword()
 
@@ -43,7 +58,7 @@ func (a *scramAuthentication) start(initialData []byte, userDb auth.Database) {
 	a.challenge([]byte(msg1ToSend))
 }
 
-func NewAuthentication(mechanism string, userDb auth.Database, initialData []byte, success func(), failure func(), challenge func(v []byte), r io.Reader) Authentication {
+func NewAuthentication(mechanism string, userDb auth.Database, initialData []byte, success func(), failure func(ServerError), challenge func(v []byte), r io.Reader) Authentication {
 	data := &hashData{
 		h: map[string]string{},
 	}
@@ -68,7 +83,7 @@ func (a *scramAuthentication) Response(data []byte) {
 	_, ok := a.scram.step2(msg.clientProof)
 
 	if !ok {
-		a.failure()
+		a.failure(InvalidProof)
 		return
 	}
 
