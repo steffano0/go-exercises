@@ -146,3 +146,30 @@ func (s *SaslSuite) Test_NewAuthentication_failsOnABadMessage(c *C) {
 	c.Assert(failureCalled, Equals, true)
 	c.Assert(failureCalledWith, Equals, InvalidEncoding)
 }
+
+func (s *SaslSuite) Test_NewAuthentication_failsOnBadChannelBindingType(c *C) {
+	userdb := auth.NewDatabase()
+	userdb.AddUser(auth.NewUser("user", "pen"))
+
+	successCalled := false
+
+	success := func() {
+		successCalled = true
+	}
+
+	failureCalled := false
+	var failureCalledWith ServerError
+	failure := func(e ServerError) {
+		failureCalled = true
+		failureCalledWith = e
+	}
+
+	challenge := func(v []byte) {
+	}
+
+	NewAuthentication("SCRAM-SHA-256", userdb, []byte("s,,n=user,r=rOprNGfwEbeRWgbNEkqO"), success, failure, challenge, newFixedRandomTestCase1())
+
+	c.Assert(successCalled, Equals, false)
+	c.Assert(failureCalled, Equals, true)
+	c.Assert(failureCalledWith, Equals, UnsupportedChannelBindingType)
+}
