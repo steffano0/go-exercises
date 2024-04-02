@@ -4,18 +4,18 @@ import (
 	"testing"
 )
 
-func newFakeRover(d string) *Rover {
-	return &Rover{direction: d, position: newFakeRoverPosition()}
+func newTestRover(d string) *Rover {
+	return &Rover{direction: d, position: newTestRoverPosition()}
 }
 
-func newFakeRoverPosition() *Position {
+func newTestRoverPosition() *Position {
 	return &Position{row: 2, col: 2}
 }
 
 func Test_Rover_roverSetsAttributesCorrectly(t *testing.T) {
 
-	FakeRover := newFakeRover("N")
-	FakeRoverPosition := newFakeRoverPosition()
+	FakeRover := newTestRover("N")
+	FakeRoverPosition := newTestRoverPosition()
 	roverDirection := FakeRover.direction
 
 	if roverDirection != "N" {
@@ -32,7 +32,7 @@ func Test_Rover_roverSetsAttributesCorrectly(t *testing.T) {
 
 func Test_Rover_roverTurnRightWhenCurrentRoverDirectionIsNorth(t *testing.T) {
 
-	FakeRover := newFakeRover("N")
+	FakeRover := newTestRover("N")
 
 	FakeRover.turnRight()
 
@@ -45,7 +45,7 @@ func Test_Rover_roverTurnRightWhenCurrentRoverDirectionIsNorth(t *testing.T) {
 
 func Test_Rover_roverTurnRightWhenCurrentRoverDirectionIsEast(t *testing.T) {
 
-	FakeRover := newFakeRover("E")
+	FakeRover := newTestRover("E")
 
 	FakeRover.turnRight()
 
@@ -58,7 +58,7 @@ func Test_Rover_roverTurnRightWhenCurrentRoverDirectionIsEast(t *testing.T) {
 
 func Test_Rover_roverTurnRightWhenCurrentRoverDirectionIsSouth(t *testing.T) {
 
-	FakeRover := newFakeRover("S")
+	FakeRover := newTestRover("S")
 
 	FakeRover.turnRight()
 
@@ -71,7 +71,7 @@ func Test_Rover_roverTurnRightWhenCurrentRoverDirectionIsSouth(t *testing.T) {
 
 func Test_Rover_roverTurnRightWhenCurrentRoverDirectionIsWest(t *testing.T) {
 
-	FakeRover := newFakeRover("W")
+	FakeRover := newTestRover("W")
 
 	FakeRover.turnRight()
 
@@ -84,7 +84,7 @@ func Test_Rover_roverTurnRightWhenCurrentRoverDirectionIsWest(t *testing.T) {
 
 func Test_Rover_roverTurnLeftWhenCurrentRoverDirectionIsNorth(t *testing.T) {
 
-	FakeRover := newFakeRover("N")
+	FakeRover := newTestRover("N")
 
 	FakeRover.turnLeft()
 
@@ -97,7 +97,7 @@ func Test_Rover_roverTurnLeftWhenCurrentRoverDirectionIsNorth(t *testing.T) {
 
 func Test_Rover_roverTurnLeftWhenCurrentRoverDirectionIsWest(t *testing.T) {
 
-	FakeRover := newFakeRover("W")
+	FakeRover := newTestRover("W")
 
 	FakeRover.turnLeft()
 
@@ -110,7 +110,7 @@ func Test_Rover_roverTurnLeftWhenCurrentRoverDirectionIsWest(t *testing.T) {
 
 func Test_Rover_roverTurnLeftWhenCurrentRoverDirectionIsSouth(t *testing.T) {
 
-	FakeRover := newFakeRover("S")
+	FakeRover := newTestRover("S")
 
 	FakeRover.turnLeft()
 
@@ -123,7 +123,7 @@ func Test_Rover_roverTurnLeftWhenCurrentRoverDirectionIsSouth(t *testing.T) {
 
 func Test_Rover_roverTurnLeftWhenCurrentRoverDirectionIsEast(t *testing.T) {
 
-	FakeRover := newFakeRover("E")
+	FakeRover := newTestRover("E")
 
 	FakeRover.turnLeft()
 
